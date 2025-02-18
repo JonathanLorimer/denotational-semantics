@@ -8,6 +8,19 @@ import Data.Product as P
 open P using (_×_; _,_) 
 open import Function.Base using (_∘_)
 
+data D2 : Set where
+  One : ℕ → D2
+  Zero : ℕ → D2
+
+_→D2_ : (ℕ → ℕ) → D2 → D2
+f →D2 One x = One (f x)
+f →D2 Zero x = Zero (f x)
+
+div2 : ℕ → D2 
+div2 0 = Zero 0
+div2 1 = One 0 
+div2 (suc (suc n)) = suc →D2 (div2 n)
+
 module NonCanonical where
 
   data Bin : Set where
@@ -31,19 +44,6 @@ module NonCanonical where
 
   OOIIIOOI≡156 : bin_to_nat (O O I I I O O 𝕀) ≡ 156
   OOIIIOOI≡156 = refl
-
-  data D2 : Set where
-    One : ℕ → D2
-    Zero : ℕ → D2
-
-  _→D2_ : (ℕ → ℕ) → D2 → D2
-  f →D2 One x = One (f x)
-  f →D2 Zero x = Zero (f x)
-
-  div2 : ℕ → D2 
-  div2 0 = Zero 0
-  div2 1 = One 0 
-  div2 (suc (suc n)) = suc →D2 (div2 n)
 
   -- 2. Show that every number represents a single number.
   {-# TERMINATING #-}
@@ -76,8 +76,6 @@ module Canonical where
   bin_to_nat (𝔹 𝕀) = 1
   bin_to_nat (𝔹 (O x)) = 2 * (bin_to_nat (𝔹 x))
   bin_to_nat (𝔹 (I x)) = 2 * (bin_to_nat (𝔹 x)) + 1
-
-  open NonCanonical using (div2; D2; Zero; One; _→D2_)
 
   {-# TERMINATING #-}
   nat_to_bin : ℕ → N
@@ -132,16 +130,33 @@ module Canonical where
     ≡⟨ nat_to_bin-Zero (n + n) (suc n) (div2-zero-step { n = n + n } (div2n+n≡Zeron n)) ⟩
     (O_ →N nat_to_bin (suc n))
     ∎
+  N→ℕ→N≡ : (n : N) → nat_to_bin (bin_to_nat n) ≡ n 
+  N→ℕ→N≡ 𝕆 = refl 
+  N→ℕ→N≡ (𝔹 𝕀) = refl 
+  N→ℕ→N≡ (𝔹 (O x)) = begin 
+    nat_to_bin (bin_to_nat (𝔹 (O x)))     ≡⟨ refl ⟩
+    nat_to_bin (2 * (bin_to_nat (𝔹 x)))   ≡⟨ power-of-2→O (bin_to_nat (𝔹 x)) ⟩
+    O_ →N nat_to_bin (bin_to_nat (𝔹 x))   ≡⟨ cong (O_ →N_) (N→ℕ→N≡ (𝔹 x)) ⟩
+    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
+    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
+    𝔹 (O x)                               ∎   
+  N→ℕ→N≡ (𝔹 (I x)) =  begin
+    nat_to_bin (bin_to_nat (𝔹 (I x)))         ≡⟨ refl ⟩
+    nat_to_bin (2 * (bin_to_nat (𝔹 x)) + 1)   ≡⟨ {!   !} ⟩
+    -- TODO: Show that `bin_to_nat (𝔹 x)` is not zero and thereofore has a suc
+    -- lemma' : (b : N) → bin_to_nat (𝔹 b) → suc n
+    -- lemma' n = ?
+    {!   !}                                   ≡⟨ {!   !} ⟩
+   -- TODO: put an I_ on the end by  power-of-2+1→I, but first we need to generate a div2 → One equality via lemma
+    -- ≡⟨ nat_to_bin-One ? ? (lemma (bin_to_nat (𝔹 x)))  ⟩
+    𝔹 (I x)
+    ∎
+    -- ≡⟨ nat_to_bin-One ? ? (lemma (bin_to_nat (𝔹 x)))  ⟩
+
+  -- Testing out proofs for the I case proofs
 
   power-of-2+1→I : (n : ℕ) → nat_to_bin (2 * (suc n) + 1) ≡ I_ →N (nat_to_bin (suc n))
   power-of-2+1→I zero = refl
-    -- begin
-    -- nat_to_bin (2 *  + 1)
-    -- ≡⟨ cong (nat_to_bin ∘ (_+ 1)) (*-zeroʳ 2) ⟩
-    -- nat_to_bin 1
-    -- ≡⟨ {!   !} ⟩
-    -- {!   !}
-    -- ∎
   power-of-2+1→I (suc n) = 
     begin
     nat_to_bin (2 * (2 + n) + 1)
@@ -149,49 +164,24 @@ module Canonical where
     (I_ →N nat_to_bin (2 + n))
     ∎
 
-  -- {-# TERMINATING #-}
-  -- nat_to_bin : ℕ → N
-  -- nat_to_bin 0 = 𝕆 
-  -- nat_to_bin 1 = 𝔹 𝕀
-  -- nat_to_bin x with div2 x
-  -- ... | Zero n = O_ →N (nat_to_bin n)
-  -- ... | One n = I_ →N (nat_to_bin n)
-
-
-    -- begin
-    -- nat_to_bin (1 + (n + (1 + (n + zero))))
-    -- ≡⟨ cong (nat_to_bin ∘ suc ∘ (n +_)) (*-identityˡ (suc n)) ⟩
-    -- nat_to_bin (suc (n + (1 + n)))
-    -- ≡⟨ cong (nat_to_bin ∘ suc) (+-comm n (1 + n)) ⟩
-    -- nat_to_bin (suc (suc n + n))
-    -- ≡⟨ cong (nat_to_bin ∘ suc) (+-assoc 1 n n) ⟩
-    -- nat_to_bin (2 + (n + n))
-    -- ≡⟨ nat_to_bin-Zero (n + n) (suc n) (div2-zero-step { n = n + n } (div2n+n≡Zeron n)) ⟩
-    -- (O_ →N nat_to_bin (suc n))
-    -- ∎
-
-  N→ℕ→N≡ : (n : N) → nat_to_bin (bin_to_nat n) ≡ n 
-  N→ℕ→N≡ 𝕆 = refl 
-  N→ℕ→N≡ (𝔹 𝕀) = refl 
-  N→ℕ→N≡ (𝔹 (O x)) = 
-    begin 
-    nat_to_bin (bin_to_nat (𝔹 (O x))) 
-    ≡⟨ refl ⟩
-    nat_to_bin (2 * (bin_to_nat (𝔹 x)))
-    ≡⟨ power-of-2→O (bin_to_nat (𝔹 x)) ⟩
-    (O_ →N nat_to_bin (bin_to_nat (𝔹 x)))
-    ≡⟨ cong (O_ →N_) (N→ℕ→N≡ (𝔹 x)) ⟩
-    (O_ →N (𝔹 x))
-    ≡⟨ refl ⟩
-    O_ →N (𝔹 x)
-    ≡⟨ refl ⟩
-    𝔹 (O x)
-    ∎   
-  N→ℕ→N≡ (𝔹 (I x)) =  
-    begin
-    nat_to_bin (bin_to_nat (𝔹 (I x)))
-    ≡⟨ refl ⟩
-    nat_to_bin (2 * (bin_to_nat (𝔹 x)) + 1)
-    ≡⟨ {!   !} ⟩
-    𝔹 (I x)
+  div2-2*sucn+1≡One-n+1 : (n : ℕ) → div2 (2 * (suc n) + 1) ≡ One (n + 1)
+  div2-2*sucn+1≡One-n+1 zero = refl
+  div2-2*sucn+1≡One-n+1 (suc x) =  begin
+    div2 (2 * (2 + x) + 1)                      ≡⟨ refl ⟩
+    suc →D2 div2 (x + (2 + (x + zero)) + 1)     ≡⟨ cong (λ n → (suc →D2 div2 (x + (2 + n) + 1))) (+-identityʳ x) ⟩
+    suc →D2 div2 (x + (2 + x) + 1)              ≡⟨ refl ⟩
+                                                -- TODO: clean this up with a lemma that just operates on the arithmetic
+                                                -- i.e. x + (1 + (1 + x)) + 1 ≡ 2 * (1 + x) + 1
+    suc →D2 div2 (x + (1 + (1 + x)) + 1)        ≡⟨ cong (λ n → suc →D2 div2 (n + 1)) (sym (+-assoc x 1 (1 + x)) ) ⟩
+    suc →D2 div2 ((x + 1) + (1 + x) + 1)        ≡⟨ cong (λ n → suc →D2 div2 (n + (1 + x) + 1)) (+-comm x 1) ⟩
+    suc →D2 div2 ((1 + x) + (1 + x) + 1)        ≡⟨ cong (λ n → suc →D2 div2 (1 + x + n + 1)) (sym (*-identityʳ (1 + x))) ⟩
+    suc →D2 div2 (1 + x + (1 + x) * 1 + 1)      ≡⟨ cong (λ n → suc →D2 div2 (n + 1)) (sym (*-suc (1 + x) 1)) ⟩
+    suc →D2 div2 ((1 + x) * 2 + 1)              ≡⟨ cong (λ n → suc →D2 div2 (n + 1)) (*-comm (suc x) 2)⟩
+    suc →D2 div2 (2 * (1 + x) + 1)              ≡⟨ cong (suc →D2_) (div2-2*sucn+1≡One-n+1 x) ⟩
+    suc →D2 One (x + 1)                         ≡⟨ refl ⟩
+    One (suc x + 1)
     ∎
+
+  nat_to_bin-One : (n m : ℕ) → div2 n ≡ One m → nat_to_bin n ≡ I_ →N (nat_to_bin m)
+  nat_to_bin-One n m eq with div2 n | eq
+  ... | x | e = {!   !}
