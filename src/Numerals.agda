@@ -194,7 +194,6 @@ module Canonical where
     nat_to_bin (2 * (bin_to_nat (𝔹 x)))   ≡⟨ power-of-2→O (bin_to_nat (𝔹 x)) ⟩
     O_ →N nat_to_bin (bin_to_nat (𝔹 x))   ≡⟨ cong (O_ →N_) (N→ℕ→N≡ (𝔹 x)) ⟩
     O_ →N (𝔹 x)                           ≡⟨ refl ⟩
-    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
     𝔹 (O x)                               ∎   
   N→ℕ→N≡ (𝔹 (I x)) =  begin
     nat_to_bin (bin_to_nat (𝔹 (I x)))             ≡⟨ refl ⟩
@@ -202,4 +201,5 @@ module Canonical where
     nat_to_bin (2 * suc (𝔹-suc-n x .P.proj₁) + 1) ≡⟨ power-of-2+1→I (𝔹-suc-n x .P.proj₁) ⟩
     I_ →N nat_to_bin (suc (𝔹-suc-n x .P.proj₁))   ≡⟨ cong (I_ →N_ ∘ nat_to_bin) (sym ((𝔹-suc-n x) .P.proj₂)) ⟩
     I_ →N nat_to_bin (bin_to_nat (𝔹 x))           ≡⟨ cong (I_ →N_) (N→ℕ→N≡ (𝔹 x))  ⟩
+    I_ →N (𝔹 x)                                   ≡⟨ refl  ⟩
     𝔹 (I x)                                       ∎
