@@ -132,8 +132,6 @@ module Canonical where
     (O_ →N nat_to_bin (suc n))
     ∎
 
-  open import Data.Empty using (⊥)
-
   -- Testing out proofs for the I case proofs
   𝔹-suc-n : (b : Bin) → ∃[ n ] bin_to_nat (𝔹 b) ≡ suc n
   𝔹-suc-n 𝕀 = 0 , refl
@@ -150,9 +148,13 @@ module Canonical where
       1 + 2 * (1 + (𝔹-suc-n b .P.proj₁)) ∎
     )
 
-  nat_to_bin-One : (n m : ℕ) → div2 n ≡ One m → nat_to_bin n ≡ I_ →N (nat_to_bin m)
-  nat_to_bin-One n m eq with div2 n | eq
-  ... | x | e = {!   !}
+  nat_to_bin-One 
+    : (n≥2 m n : ℕ) 
+    → (n≥2 ≡ 2 + n) 
+    → div2 n≥2 ≡ One m 
+    → nat_to_bin n≥2 ≡ I_ →N (nat_to_bin m)
+  nat_to_bin-One n≥2 m n ≥2 eq rewrite ≥2 with div2 (2 + n) | eq
+  ... | One x | refl = refl
 
   div2-2*sucn+1≡One-n+1 : (n : ℕ) → div2 (2 * (suc n) + 1) ≡ One (suc n)
   div2-2*sucn+1≡One-n+1 zero = refl
@@ -175,11 +177,14 @@ module Canonical where
   power-of-2+1→I : (n : ℕ) → nat_to_bin (2 * (suc n) + 1) ≡ I_ →N (nat_to_bin (suc n))
   power-of-2+1→I zero = refl
   power-of-2+1→I (suc n) = 
-    begin
-    nat_to_bin (2 * (2 + n) + 1)
-    ≡⟨ nat_to_bin-One (2 * (2 + n) + 1) (suc (suc n)) (div2-2*sucn+1≡One-n+1 (suc n)) ⟩
-    (I_ →N nat_to_bin (2+ n))
-    ∎
+    let isOne : div2 (2 * (2 + n) + 1) ≡ One (2 + n)
+        isOne = div2-2*sucn+1≡One-n+1 (suc n)
+        n≥2 : 2 * (2 + n) + 1 ≡ 2 + (2 + (2 * n) + 1)
+        n≥2   = cong (_+ 1) (*-distribˡ-+ 2 2 n) 
+        x     = 2 * (2 + n) + 1
+        y     = 2 + n
+        x'    = 2 + (2 * n) + 1 
+    in nat_to_bin-One x y x' n≥2 isOne
 
   N→ℕ→N≡ : (n : N) → nat_to_bin (bin_to_nat n) ≡ n 
   N→ℕ→N≡ 𝕆 = refl 
