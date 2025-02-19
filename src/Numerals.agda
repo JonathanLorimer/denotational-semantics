@@ -7,6 +7,7 @@ open Eq.≡-Reasoning using (begin_; _∎; step-≡; step-≡-⟩)
 import Data.Product as P
 open P using (_×_; _,_) 
 open import Function.Base using (_∘_)
+open import Data.Product using (Σ; _,_; ∃; Σ-syntax; ∃-syntax) 
 
 data D2 : Set where
   One : ℕ → D2
@@ -130,41 +131,30 @@ module Canonical where
     ≡⟨ nat_to_bin-Zero (n + n) (suc n) (div2-zero-step { n = n + n } (div2n+n≡Zeron n)) ⟩
     (O_ →N nat_to_bin (suc n))
     ∎
-  N→ℕ→N≡ : (n : N) → nat_to_bin (bin_to_nat n) ≡ n 
-  N→ℕ→N≡ 𝕆 = refl 
-  N→ℕ→N≡ (𝔹 𝕀) = refl 
-  N→ℕ→N≡ (𝔹 (O x)) = begin 
-    nat_to_bin (bin_to_nat (𝔹 (O x)))     ≡⟨ refl ⟩
-    nat_to_bin (2 * (bin_to_nat (𝔹 x)))   ≡⟨ power-of-2→O (bin_to_nat (𝔹 x)) ⟩
-    O_ →N nat_to_bin (bin_to_nat (𝔹 x))   ≡⟨ cong (O_ →N_) (N→ℕ→N≡ (𝔹 x)) ⟩
-    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
-    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
-    𝔹 (O x)                               ∎   
-  N→ℕ→N≡ (𝔹 (I x)) =  begin
-    nat_to_bin (bin_to_nat (𝔹 (I x)))         ≡⟨ refl ⟩
-    nat_to_bin (2 * (bin_to_nat (𝔹 x)) + 1)   ≡⟨ {!   !} ⟩
-    -- TODO: Show that `bin_to_nat (𝔹 x)` is not zero and thereofore has a suc
-    -- lemma' : (b : N) → bin_to_nat (𝔹 b) → suc n
-    -- lemma' n = ?
-    {!   !}                                   ≡⟨ {!   !} ⟩
-   -- TODO: put an I_ on the end by  power-of-2+1→I, but first we need to generate a div2 → One equality via lemma
-    -- ≡⟨ nat_to_bin-One ? ? (lemma (bin_to_nat (𝔹 x)))  ⟩
-    𝔹 (I x)
-    ∎
-    -- ≡⟨ nat_to_bin-One ? ? (lemma (bin_to_nat (𝔹 x)))  ⟩
+
+  open import Data.Empty using (⊥)
 
   -- Testing out proofs for the I case proofs
+  𝔹-suc-n : (b : Bin) → ∃[ n ] bin_to_nat (𝔹 b) ≡ suc n
+  𝔹-suc-n 𝕀 = 0 , refl
+  𝔹-suc-n (O b) = 1 + (2 * 𝔹-suc-n b .P.proj₁) , (begin 
+      bin_to_nat (𝔹 (O b))           ≡⟨ refl ⟩ 
+      (2 * (bin_to_nat (𝔹 b)))       ≡⟨ cong (2 *_) (𝔹-suc-n b .P.proj₂) ⟩
+      2 * (1 + (𝔹-suc-n b .P.proj₁)) ≡⟨ *-distribˡ-+ 2 1 (𝔹-suc-n b .P.proj₁) ⟩ 
+      2 + (2 * (𝔹-suc-n b .P.proj₁)) ∎
+    )
+  𝔹-suc-n (I b) = 2 * (1 + 𝔹-suc-n b .P.proj₁) , (begin
+      bin_to_nat (𝔹 (I b)) ≡⟨ refl ⟩
+      2 * (bin_to_nat (𝔹 b)) + 1 ≡⟨ +-comm (2 * (bin_to_nat (𝔹 b))) 1 ⟩
+      1 + 2 * bin_to_nat (𝔹 b) ≡⟨ cong ((1 +_) ∘ (2 *_)) (𝔹-suc-n b .P.proj₂) ⟩
+      1 + 2 * (1 + (𝔹-suc-n b .P.proj₁)) ∎
+    )
 
-  power-of-2+1→I : (n : ℕ) → nat_to_bin (2 * (suc n) + 1) ≡ I_ →N (nat_to_bin (suc n))
-  power-of-2+1→I zero = refl
-  power-of-2+1→I (suc n) = 
-    begin
-    nat_to_bin (2 * (2 + n) + 1)
-    ≡⟨ {!   !} ⟩
-    (I_ →N nat_to_bin (2 + n))
-    ∎
+  nat_to_bin-One : (n m : ℕ) → div2 n ≡ One m → nat_to_bin n ≡ I_ →N (nat_to_bin m)
+  nat_to_bin-One n m eq with div2 n | eq
+  ... | x | e = {!   !}
 
-  div2-2*sucn+1≡One-n+1 : (n : ℕ) → div2 (2 * (suc n) + 1) ≡ One (n + 1)
+  div2-2*sucn+1≡One-n+1 : (n : ℕ) → div2 (2 * (suc n) + 1) ≡ One (suc n)
   div2-2*sucn+1≡One-n+1 zero = refl
   div2-2*sucn+1≡One-n+1 (suc x) =  begin
     div2 (2 * (2 + x) + 1)                      ≡⟨ refl ⟩
@@ -178,10 +168,33 @@ module Canonical where
     suc →D2 div2 (1 + x + (1 + x) * 1 + 1)      ≡⟨ cong (λ n → suc →D2 div2 (n + 1)) (sym (*-suc (1 + x) 1)) ⟩
     suc →D2 div2 ((1 + x) * 2 + 1)              ≡⟨ cong (λ n → suc →D2 div2 (n + 1)) (*-comm (suc x) 2)⟩
     suc →D2 div2 (2 * (1 + x) + 1)              ≡⟨ cong (suc →D2_) (div2-2*sucn+1≡One-n+1 x) ⟩
-    suc →D2 One (x + 1)                         ≡⟨ refl ⟩
-    One (suc x + 1)
+    suc →D2 One (suc x)                         ≡⟨ refl ⟩
+    One (suc (suc x))
     ∎
 
-  nat_to_bin-One : (n m : ℕ) → div2 n ≡ One m → nat_to_bin n ≡ I_ →N (nat_to_bin m)
-  nat_to_bin-One n m eq with div2 n | eq
-  ... | x | e = {!   !}
+  power-of-2+1→I : (n : ℕ) → nat_to_bin (2 * (suc n) + 1) ≡ I_ →N (nat_to_bin (suc n))
+  power-of-2+1→I zero = refl
+  power-of-2+1→I (suc n) = 
+    begin
+    nat_to_bin (2 * (2 + n) + 1)
+    ≡⟨ nat_to_bin-One (2 * (2 + n) + 1) (suc (suc n)) (div2-2*sucn+1≡One-n+1 (suc n)) ⟩
+    (I_ →N nat_to_bin (2+ n))
+    ∎
+
+  N→ℕ→N≡ : (n : N) → nat_to_bin (bin_to_nat n) ≡ n 
+  N→ℕ→N≡ 𝕆 = refl 
+  N→ℕ→N≡ (𝔹 𝕀) = refl 
+  N→ℕ→N≡ (𝔹 (O x)) = begin 
+    nat_to_bin (bin_to_nat (𝔹 (O x)))     ≡⟨ refl ⟩
+    nat_to_bin (2 * (bin_to_nat (𝔹 x)))   ≡⟨ power-of-2→O (bin_to_nat (𝔹 x)) ⟩
+    O_ →N nat_to_bin (bin_to_nat (𝔹 x))   ≡⟨ cong (O_ →N_) (N→ℕ→N≡ (𝔹 x)) ⟩
+    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
+    O_ →N (𝔹 x)                           ≡⟨ refl ⟩
+    𝔹 (O x)                               ∎   
+  N→ℕ→N≡ (𝔹 (I x)) =  begin
+    nat_to_bin (bin_to_nat (𝔹 (I x)))             ≡⟨ refl ⟩
+    nat_to_bin (2 * (bin_to_nat (𝔹 x)) + 1)       ≡⟨ cong (λ n → nat_to_bin (2 * n + 1)) ((𝔹-suc-n x) .P.proj₂)  ⟩
+    nat_to_bin (2 * suc (𝔹-suc-n x .P.proj₁) + 1) ≡⟨ power-of-2+1→I (𝔹-suc-n x .P.proj₁) ⟩
+    I_ →N nat_to_bin (suc (𝔹-suc-n x .P.proj₁))   ≡⟨ cong (I_ →N_ ∘ nat_to_bin) (sym ((𝔹-suc-n x) .P.proj₂)) ⟩
+    I_ →N nat_to_bin (bin_to_nat (𝔹 x))           ≡⟨ cong (I_ →N_) (N→ℕ→N≡ (𝔹 x))  ⟩
+    𝔹 (I x)                                       ∎
